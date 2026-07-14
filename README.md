@@ -62,11 +62,18 @@ pip install -r requirements.txt
 #### Dependencies (`requirements.txt`):
 
 ```text
-requests>=2.25.0
-PySocks>=1.7.1
-stem>=1.8.0
-numpy>=1.19.0
-rich>=10.0.0
+certifi==2026.6.17
+charset-normalizer==3.4.9
+idna==3.18
+markdown-it-py==4.2.0
+mdurl==0.1.2
+numpy==2.5.1
+Pygments==2.20.0
+PySocks==1.7.1
+requests==2.34.2
+rich==15.0.0
+stem==1.8.2
+urllib3==2.7.0
 
 ```
 
