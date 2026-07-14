@@ -1,35 +1,189 @@
-# 🛡️ High-OPSEC Tor-Routed Network Scanner
-
-A stealth-focused, highly resilient network reconnaissance and application probing framework built to completely disrupt behavioral signature analysis and timing-based IDS tracking.
-
-Developed by **Gemini & raKSum** • *July 2026*
+Here is a complete, production-ready `README.md` file tailored specifically for your project. It consolidates the setup requirements, architecture features, troubleshooting steps for Parrot OS, and usage guides into a clean, professional documentation layout.
 
 ---
 
-## 🌟 Advanced OPSEC Features Included
+# 🛡️ High-OPSEC Tor-Routed Network Probing Engine
 
-Unlike traditional scanning utilities that generate heavy, sequential packet spikes, this framework utilizes a four-tier defense architecture:
-
-* **Proxy Leak-Guard (Kill Switch):** Pre-flights every single probe by checking its routing state against a cached baseline IP. If Tor drops out or leaks your true external IP, the framework triggers an instantaneous, hard exit.
-* **Poisson-Distributed Jitter:** Replaces predictable linear random delays with a natural mathematical distribution curve. Probes are bunched into erratic clusters and long "think-time" pauses, effectively mimicking organic human web browsing patterns.
-* **Passive Pre-Flight Checks:** Queries historical, global DNS replication caches over Tor to confirm a host's existence *before* initiating a direct port handshake—preventing dead-host infrastructure alerts.
-* **Dynamic Layer-3 TTL Spoofing:** Randomly alters the Time-to-Live (`TTL`) socket header options between common operating system signatures (e.g., Windows vs. Linux) on a per-probe basis.
-* **SOCKS5h Remote Name Resolution:** Prevents local DNS leakage by completely disabling local host lookup. All destination URL hostnames are securely passed across the proxy stream to be resolved at the final Tor Exit Node.
+An advanced, high-stealth network reconnaissance tool designed to perform target and port evaluation over the Tor network. By utilizing strict proxy isolation, programmatic circuit rotation, randomized operating system signatures (TTL), and human-like timing distributions, this scanner minimizes passive and active detection profiles.
 
 ---
 
-## 🚀 Installation & Setup
+## ✨ Architectural Features
 
-### Prerequisites
+* **🔄 Programmatic IP Rotation:** Dynamically signals your local Tor daemon to negotiate a brand new circuit and exit node IP before scanning every target and port combination.
+* **🔌 Zero-Pool Socket Isolation:** Destroys Python's connection pooling mechanism on every iteration. This forces the host operating system to close old TCP streams immediately and prevents SOCKS5 "Keep-Alive" leak profiles.
+* **🐢 Poisson Jitter Delay:** Avoids predictable timing thresholds by utilizing a mathematical Poisson distribution curve to generate irregular, human-like delay intervals between checks.
+* **🕶️ Operating System Spoofing:** Randomly alters Socket Time-To-Live (`TTL`) properties (64 vs. 128) on a per-probe basis to emulate different operating systems.
+* **⛔ Hard Kill-Switch (Leak Guard):** Establishes your public IP signature before execution. If the proxy fails or a connection leaks natively, the script triggers an emergency shutdown instantly.
+* **🎨 Metasploit-Style Randomized Banners:** Features a collection of 20 unique high-OPSEC ASCII art templates rotating dynamically on startup.
 
-You must have the Tor daemon installed locally and configured to accept controller signals.
+---
 
-#### 1. Install Tor Daemon
-* **Debian/Ubuntu:** `sudo apt install tor`
-* **macOS (Homebrew):** `brew install tor`
+## 🛠️ Environment Setup & Installation
 
-#### 2. Configure the Tor Control Port
-Open your `torrc` file (typically found at `/etc/tor/torrc` or `/usr/local/etc/tor/torrc`) and ensure the following options are uncommented and active:
+### 1. System Dependencies Installation
+
+The tool requires a local Tor daemon and development tools to interface with the network control port.
+
+#### For Parrot OS / Kali Linux / Debian / Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install tor tor-geoipdb torsocks python3-pip python3-venv -y
+
+```
+
+#### For macOS (via Homebrew):
+
+```bash
+brew install tor
+brew services start tor
+
+```
+
+---
+
+### 2. Python Virtual Environment Configuration
+
+Avoid conflicts with system-wide python environments by running the tool inside an isolated sandbox:
+
+```bash
+# Initialize a clean virtual environment
+python3 -m venv venv
+
+# Activate the virtual environment
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install requirements
+pip install -r requirements.txt
+
+```
+
+#### Dependencies (`requirements.txt`):
+
 ```text
+requests>=2.25.0
+PySocks>=1.7.1
+stem>=1.8.0
+numpy>=1.19.0
+rich>=10.0.0
+
+```
+
+---
+
+### 3. Configuring the Tor Daemon (`torrc`)
+
+For the dynamic IP rotation feature to work, you must instruct your local Tor daemon to accept external control commands.
+
+1. Open your Tor configuration file as a superuser:
+```bash
+sudo nano /etc/tor/torrc
+
+```
+
+
+2. Scroll to the bottom of the file and add the following lines:
+```text
+# Bind SOCKS5 proxy local handler
+SocksPort 9050
+
+# Open local interface for dynamic circuit rotation
 ControlPort 9051
-CookieAuthentication 1
+
+# Authentication Choice:
+# Option A: Standard Cookie Authentication (Recommended for Kali/Debian/macOS)
+# CookieAuthentication 1
+
+# Option B: Hashed Password Authentication (Required for Parrot OS due to sandboxing)
+# Generate your hashed token using: tor --hash-password yourpassword
+HashedControlPassword 16:872C55... # <- Replace with your hash output
+
+```
+
+
+3. Save and close the file (`Ctrl+O`, `Enter`, `Ctrl+X`).
+4. Restart your native system service:
+```bash
+# On Linux:
+sudo systemctl restart tor
+
+# On macOS:
+brew services restart tor
+
+```
+
+
+
+---
+
+### 4. Permissions & OS Specific Troubleshooting
+
+#### Debian / Ubuntu / Kali Linux (Permission Denied)
+
+If your script throws permission errors trying to read Tor's auth cookies, add your system user to the Tor system group:
+
+```bash
+sudo usermod -a -G debian-tor $USER
+
+```
+
+> ⚠️ **CRITICAL:** You must log out of your system completely or restart your terminal window for this change to take effect.
+
+#### Parrot OS (SOCKS Socket error 0x01)
+
+Parrot OS manages traffic using **Anonsurf**, which overrides system routing and locks downstream control ports.
+
+1. Turn off Anonsurf temporarily before using this script's independent rotation engine:
+```bash
+sudo anonsurf stop
+
+```
+
+
+2. Start standard system Tor:
+```bash
+sudo systemctl start tor
+
+```
+
+
+
+---
+
+## 🚀 Usage Guide
+
+Once your environment is configured, you can launch the scanner directly.
+
+```bash
+# Basic run with default staging targets on Ports 80 and 443
+python -m opsec_scanner.scanner
+
+# Advanced target and multi-port scanning matrix
+python -m opsec_scanner.scanner --targets example.com nmap.org --ports 80 443 22 8080
+
+```
+
+### Argument Reference
+
+* `-t, --targets` : Space-separated list of domain names/URLs to probe.
+* `-p, --ports`   : Space-separated list of ports to test on the targets (e.g., `80 443 22`).
+
+---
+
+## 📂 Project Structure
+
+```text
+opsec_scanner/
+├── __init__.py
+├── scanner.py             # Main scanning engine & CLI parsing
+├── requirements.txt       # Python dependencies list
+└── README.md              # Project documentation (this file)
+
+```
+
+---
+
+## ⚖️ Disclaimer
+
+This tool is designed purely for educational purposes, authorization-verified security audits, and privacy-enhancing system administration verification. Users are solely responsible for ensuring compliance with local laws and network-testing policies. Use responsibly.
